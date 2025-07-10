@@ -1,7 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:food_app/data/dummy_data.dart';
 import 'package:food_app/models/meal.dart';
 import 'package:food_app/screens/categories.dart';
+import 'package:food_app/screens/filters.dart';
+import 'package:food_app/screens/main_drawer.dart';
 import 'package:food_app/screens/meals.dart';
+
+const kInitialFilter = {
+  Filter.glutenFree: false,
+  Filter.lactosFree: false,
+  Filter.vegetarian: false,
+  Filter.vegan: false,
+};
 
 class TabsScreen extends StatefulWidget {
   const TabsScreen({super.key});
@@ -13,6 +23,8 @@ class TabsScreen extends StatefulWidget {
 class _TabsScreenState extends State<TabsScreen> {
   int _selectedIndex = 0;
   final List<Meal> _favoriteMeals = [];
+
+  Map<Filter, bool> _selectedFilter = kInitialFilter;
 
   void _showInfoMessage(String message) {
     ScaffoldMessenger.of(context).clearSnackBars();
@@ -42,9 +54,42 @@ class _TabsScreenState extends State<TabsScreen> {
     });
   }
 
+  void _setScreen(String identifier) async {
+    Navigator.of(context).pop();
+    if (identifier == 'filters') {
+      final result = await Navigator.of(context).push<Map<Filter, bool>>(
+        MaterialPageRoute(
+          builder: (ctx) => FiltersScreen(currentFilters: _selectedFilter),
+        ),
+      );
+      setState(() {
+        _selectedFilter = result ?? kInitialFilter;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    Widget activePage = Categories(onToggleFavorite: _toggleFavoriteStatus);
+    final availableMeals = dummyMeals.where((meal) {
+      if (_selectedFilter[Filter.glutenFree]! && !meal.isGlutenFree) {
+        return false;
+      }
+      if (_selectedFilter[Filter.lactosFree]! && !meal.isLactoseFree) {
+        return false;
+      }
+      if (_selectedFilter[Filter.vegetarian]! && !meal.isVegetarian) {
+        return false;
+      }
+      if (_selectedFilter[Filter.vegan]! && !meal.isVegan) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    Widget activePage = Categories(
+      onToggleFavorite: _toggleFavoriteStatus,
+      availableMeals: availableMeals,
+    );
     var activePageTitle = 'Categories';
 
     if (_selectedIndex == 1) {
@@ -57,6 +102,7 @@ class _TabsScreenState extends State<TabsScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(activePageTitle)),
       body: activePage,
+      drawer: MainDrawer(onSelectScreen: _setScreen),
       bottomNavigationBar: BottomNavigationBar(
         onTap: _selectPage,
         currentIndex: _selectedIndex,
