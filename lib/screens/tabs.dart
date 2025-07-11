@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:food_app/providers/favorites_provider.dart';
-import 'package:food_app/providers/meals_provider.dart';
 import 'package:food_app/screens/categories.dart';
 import 'package:food_app/screens/main_drawer.dart';
 import 'package:food_app/screens/meals.dart';
@@ -25,8 +24,6 @@ class TabsScreen extends ConsumerStatefulWidget {
 class _TabsScreenState extends ConsumerState<TabsScreen> {
   int _selectedIndex = 0;
 
-  Map<Filter, bool> _selectedFilter = kInitialFilter;
-
   void _selectPage(int index) {
     setState(() {
       _selectedIndex = index;
@@ -36,37 +33,17 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   void _setScreen(String identifier) async {
     Navigator.of(context).pop();
     if (identifier == 'filters') {
-      final result = await Navigator.of(context).push<Map<Filter, bool>>(
-        MaterialPageRoute(
-          builder: (ctx) => FiltersScreen(currentFilters: _selectedFilter),
-        ),
+      await Navigator.of(context).push<Map<Filter, bool>>(
+        MaterialPageRoute(builder: (ctx) => const FiltersScreen()),
       );
-      setState(() {
-        _selectedFilter = result ?? kInitialFilter;
-      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final meals = ref.watch(mealsProvider);
-    final availableMeals = meals.where((meal) {
-      if (_selectedFilter[Filter.glutenFree]! && !meal.isGlutenFree) {
-        return false;
-      }
-      if (_selectedFilter[Filter.lactosFree]! && !meal.isLactoseFree) {
-        return false;
-      }
-      if (_selectedFilter[Filter.vegetarian]! && !meal.isVegetarian) {
-        return false;
-      }
-      if (_selectedFilter[Filter.vegan]! && !meal.isVegan) {
-        return false;
-      }
-      return true;
-    }).toList();
+    final meals = ref.watch(filteredMealsProvider);
 
-    Widget activePage = Categories(availableMeals: availableMeals);
+    Widget activePage = Categories(availableMeals: meals);
     var activePageTitle = 'Categories';
 
     if (_selectedIndex == 1) {
