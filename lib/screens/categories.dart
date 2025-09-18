@@ -5,13 +5,39 @@ import 'package:food_app/models/meal.dart';
 import 'package:food_app/screens/meals.dart';
 import 'package:food_app/widgets/category_grid_item.dart';
 
-class Categories extends StatelessWidget {
+class Categories extends StatefulWidget {
   const Categories({super.key, required this.availableMeals});
 
   final List<Meal> availableMeals;
 
+  @override
+  State<Categories> createState() => _CategoriesState();
+}
+
+class _CategoriesState extends State<Categories>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+      lowerBound: 0,
+      upperBound: 1,
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   void _selectCategory(BuildContext context, Category category) {
-    final filteredMeals = availableMeals
+    final filteredMeals = widget.availableMeals
         .where((meal) => meal.categories.contains(category.id))
         .toList();
     Navigator.of(context).push(
@@ -24,26 +50,35 @@ class Categories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView(
-      padding: EdgeInsets.all(12),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 3 / 2,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
-      ),
-      children: [
-        ...availableCategories.map(
-          (category) => CategoryGridItem(
-            category: category,
-            onSelectCategory: () {
-              _selectCategory(context, category);
-            },
-          ),
+    return AnimatedBuilder(
+      animation: _animationController,
+      child: GridView(
+        padding: EdgeInsets.all(12),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 3 / 2,
+          crossAxisSpacing: 20,
+          mainAxisSpacing: 20,
         ),
-        // for (final category in availableCategories)
-        //   CategoryGridItem(category: category),
-      ],
+        children: [
+          ...availableCategories.map(
+            (category) => CategoryGridItem(
+              category: category,
+              onSelectCategory: () {
+                _selectCategory(context, category);
+              },
+            ),
+          ),
+          // for (final category in availableCategories)
+          //   CategoryGridItem(category: category),
+        ],
+      ),
+      builder: (context, child) => Padding(
+        padding: EdgeInsetsGeometry.only(
+          top: 100 * (1 - _animationController.value),
+        ),
+        child: child,
+      ),
     );
   }
 }
